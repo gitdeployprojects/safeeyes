@@ -1,86 +1,176 @@
 package com.eyezen.ui
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.isSystemInDarkMode
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Workspace
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyezen.ui.navigation.RootNavigation
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.eyezen.ui.screens.analytics.AnalyticsScreen
+import com.eyezen.ui.screens.dashboard.DashboardScreen
+import com.eyezen.ui.screens.exercises.ExerciseGuideScreen
+import com.eyezen.ui.screens.exercises.StretchExercisesScreen
+import com.eyezen.ui.screens.gamification.GamificationScreen
+import com.eyezen.ui.screens.premium.PremiumScreen
+import com.eyezen.ui.screens.settings.SettingsScreen
 import com.eyezen.ui.theme.EyeZenTheme
-import com.eyezen.viewmodel.AuthViewModel
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
 /**
- * Main Activity for EyeZen.
+ * Main activity for EyeZen app.
  *
- * Responsible for:
- * - Setting up Compose UI
- * - Handling permissions
- * - Initializing root navigation
- * - Managing system UI (status bar, navigation bar)
+ * Hosts:
+ * - Navigation
+ * - Bottom navigation bar
+ * - Theme
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                Timber.d("Notification permission granted")
-            } else {
-                Timber.d("Notification permission denied")
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        requestNotificationPermission()
+        Timber.d("MainActivity created")
 
         setContent {
-            val authViewModel: AuthViewModel = hiltViewModel()
-            val isDarkMode = isSystemInDarkMode()
-            val systemUiController = rememberSystemUiController()
-
-            EyeZenTheme(
-                darkTheme = isDarkMode,
-                dynamicColor = true
-            ) {
-                // Update system UI colors
-                SideEffect {
-                    systemUiController.setSystemBarsColor(
-                        color = Color.Transparent,
-                        darkIcons = !isDarkMode
-                    )
-                }
-
-                Surface(
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    RootNavigation()
-                }
+            EyeZenTheme {
+                EyeZenApp()
             }
         }
     }
+}
 
-    /**
-     * Requests notification permission for Android 13+
-     */
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+/**
+ * Main app composable with navigation
+ */
+@Composable
+fun EyeZenApp() {
+    val navController = rememberNavController()
+    var selectedTab by remember { mutableStateOf("dashboard") }
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                    label = { Text("Home") },
+                    selected = selectedTab == "dashboard",
+                    onClick = {
+                        selectedTab = "dashboard"
+                        navController.navigate("dashboard") {
+                            popUpTo("dashboard") { inclusive = true }
+                        }
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.LocalFireDepartment, contentDescription = "Breaks") },
+                    label = { Text("Breaks") },
+                    selected = selectedTab == "breaks",
+                    onClick = {
+                        selectedTab = "breaks"
+                        navController.navigate("breaks") {
+                            popUpTo("breaks") { inclusive = true }
+                        }
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Workspace, contentDescription = "Exercises") },
+                    label = { Text("Exercises") },
+                    selected = selectedTab == "exercises",
+                    onClick = {
+                        selectedTab = "exercises"
+                        navController.navigate("exercises") {
+                            popUpTo("exercises") { inclusive = true }
+                        }
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Achievements") },
+                    label = { Text("Achievements") },
+                    selected = selectedTab == "achievements",
+                    onClick = {
+                        selectedTab = "achievements"
+                        navController.navigate("achievements") {
+                            popUpTo("achievements") { inclusive = true }
+                        }
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                    label = { Text("Settings") },
+                    selected = selectedTab == "settings",
+                    onClick = {
+                        selectedTab = "settings"
+                        navController.navigate("settings") {
+                            popUpTo("settings") { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = "dashboard",
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable("dashboard") {
+                DashboardScreen(
+                    onStartBreak = { navController.navigate("break") },
+                    onViewAnalytics = { navController.navigate("analytics") }
+                )
+            }
+            composable("break") {
+                // Break screen placeholder
+            }
+            composable("analytics") {
+                AnalyticsScreen()
+            }
+            composable("breaks") {
+                // Breaks history screen
+            }
+            composable("exercises") {
+                StretchExercisesScreen(
+                    onStartExercise = { exercise ->
+                        navController.navigate("exercise_guide")
+                    }
+                )
+            }
+            composable("exercise_guide") {
+                ExerciseGuideScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("achievements") {
+                GamificationScreen()
+            }
+            composable("settings") {
+                SettingsScreen(
+                    onNavigate = { route -> navController.navigate(route) }
+                )
+            }
+            composable("premium") {
+                PremiumScreen()
+            }
         }
     }
 }

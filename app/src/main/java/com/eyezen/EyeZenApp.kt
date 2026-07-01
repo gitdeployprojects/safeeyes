@@ -4,7 +4,6 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
-import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -12,95 +11,80 @@ import timber.log.Timber
  * EyeZen Application class.
  *
  * Initializes:
- * - Timber for logging
  * - Hilt dependency injection
- * - Google Mobile Ads SDK
+ * - Timber logging
  * - Notification channels
  */
 @HiltAndroidApp
 class EyeZenApp : Application() {
 
+    companion object {
+        const val CHANNEL_BREAK_REMINDERS = "break_reminders"
+        const val CHANNEL_WATER_REMINDERS = "water_reminders"
+        const val CHANNEL_STRETCH_REMINDERS = "stretch_reminders"
+        const val CHANNEL_GENERAL = "general"
+    }
+
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize Timber
+        // Initialize Timber logging
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
 
-        // Initialize Google Mobile Ads
-        MobileAds.initialize(this)
-
         // Create notification channels
         createNotificationChannels()
 
-        Timber.d("EyeZen initialized successfully")
+        Timber.d("EyeZen App initialized")
     }
 
     /**
-     * Creates notification channels for Android 8.0+
+     * Create notification channels for Android 8.0+
      */
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager =
-                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-            // Break Reminder Channel
+            // Break reminders channel
             val breakChannel = NotificationChannel(
                 CHANNEL_BREAK_REMINDERS,
                 "Break Reminders",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for eye break reminders"
-                enableVibration(true)
-                setShowBadge(true)
             }
+            notificationManager.createNotificationChannel(breakChannel)
 
-            // Water Reminder Channel
+            // Water reminders channel
             val waterChannel = NotificationChannel(
                 CHANNEL_WATER_REMINDERS,
                 "Water Reminders",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Notifications for water intake reminders"
-                enableVibration(true)
-                setShowBadge(true)
             }
+            notificationManager.createNotificationChannel(waterChannel)
 
-            // Stretch Reminder Channel
+            // Stretch reminders channel
             val stretchChannel = NotificationChannel(
                 CHANNEL_STRETCH_REMINDERS,
                 "Stretch Reminders",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Notifications for stretch exercises"
-                enableVibration(true)
-                setShowBadge(true)
+                description = "Notifications for stretch exercise reminders"
             }
+            notificationManager.createNotificationChannel(stretchChannel)
 
-            // Daily Summary Channel
-            val summaryChannel = NotificationChannel(
-                CHANNEL_DAILY_SUMMARY,
-                "Daily Summary",
-                NotificationManager.IMPORTANCE_LOW
+            // General channel
+            val generalChannel = NotificationChannel(
+                CHANNEL_GENERAL,
+                "General",
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Daily wellness summary notifications"
-                setShowBadge(true)
+                description = "General notifications"
             }
-
-            notificationManager.apply {
-                createNotificationChannel(breakChannel)
-                createNotificationChannel(waterChannel)
-                createNotificationChannel(stretchChannel)
-                createNotificationChannel(summaryChannel)
-            }
+            notificationManager.createNotificationChannel(generalChannel)
         }
-    }
-
-    companion object {
-        const val CHANNEL_BREAK_REMINDERS = "break_reminders"
-        const val CHANNEL_WATER_REMINDERS = "water_reminders"
-        const val CHANNEL_STRETCH_REMINDERS = "stretch_reminders"
-        const val CHANNEL_DAILY_SUMMARY = "daily_summary"
     }
 }
